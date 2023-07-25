@@ -10,60 +10,12 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Move[] moves = board.GetLegalMoves();
-
-        // Tables for where the pieces should be         
-        int[,] knightTable =
-        {
-            {-50, -40, -30, -30, -30, -30, -40, -50},
-            {-40, -20, 0, 0, 0, 0, -20, -40},
-            {-30, 0, 10, 15, 15, 10, 0, -30},
-            {-30, 5, 15, 20, 20, 15, 5, -30},
-            {-30, 5, 15, 20, 20, 15, 5, -30},
-            {-30, 0, 10, 15, 15, 10, 0, -30},
-            {-40, -20, 0, 0, 0, 0, -20, -40},
-            {-50, -40, -30, -30, -30, -30, -40, -50}
-        };
         
-        int[,] bishopTable =
-        {
-            {-20, -10, -10, -10, -10, -10, -10, -20},
-            {-10, 5, 0, 0, 0, 0, 5, -10},
-            {-10, 10, 10, 10, 10, 10, 10, -10},
-            {-10, 0, 10, 10, 10, 10, 0, -10},
-            {-10, 5, 5, 10, 10, 5, 5, -10},
-            {-10, 0, 5, 10, 10, 5, 0, -10},
-            {-10, 0, 0, 0, 0, 0, 0, -10},
-            {-20, -10, -10, -10, -10, -10, -10, -20}
-        };
-
-        int[,] pawnTable = 
-        {
-            {0, 0, 0, 0, 0, 0, 0, 0},
-            {5, 10, 10, -20, -20, 10, 10, 5},
-            {5, -5, -10, 0, 0, -10, -5, 5},
-            {0, 0, 0, 20, 20, 0, 0, 0},
-            {5, 5, 10, 25, 25, 10, 5, 5},
-            {10, 10, 20, 30, 30, 20, 10, 10},
-            {50, 50, 50, 50, 50, 50, 50, 50},
-            {75, 75, 75, 75, 75, 75, 75, 75}
-        };
-
-        int[,] rookTable = 
-        {
-            {0, 0, 0, 5, 5, 0, 0, 0},
-            {-5, 0, 0, 0, 0, 0, 0, -5},
-            {-5, 0, 0, 0, 0, 0, 0, -5},
-            {-5, 0, 0, 0, 0, 0, 0, -5},
-            {-5, 0, 0, 0, 0, 0, 0, -5},
-            {-5, 0, 0, 0, 0, 0, 0, -5},
-            {5, 10, 10, 10, 10, 10, 10, 5},
-            {0, 0, 0, 0, 0, 0, 0, 0}
-        };
-        
-        // Find the best move with piece square tables and captures. If multiple moves have the same value, a random move is chosen
+        // Order the moves by finding the value of a capture and subtracting the value of the opponents best possible capture after that move
+        // If multiple moves have the same value, one is chosen at random
         Random rng = new();
         List<Move> bestMove = new List<Move>();
-        int highestValueMove = -50;
+        int highestMoveValue = -10050;
 
         foreach (Move move in moves)
         {
@@ -77,39 +29,53 @@ public class MyBot : IChessBot
             Piece capturedPiece = board.GetPiece(move.TargetSquare);
             int moveValue = pieceValues[(int)capturedPiece.PieceType];
 
-            if (Convert.ToInt16(move.MovePieceType) == 1)
-            {
-                moveValue += pawnTable[move.TargetSquare.File, move.TargetSquare.Rank];
-            }
-            else if(Convert.ToInt16(move.MovePieceType) == 2)
-            {
-                moveValue += knightTable[move.TargetSquare.File, move.TargetSquare.Rank];
-            }
-            else if(Convert.ToInt16(move.MovePieceType) == 3)
-            {
-                moveValue += bishopTable[move.TargetSquare.File, move.TargetSquare.Rank];
-            }
-            else if(Convert.ToInt16(move.MovePieceType) == 4)
-            {
-                moveValue += rookTable[move.TargetSquare.File, move.TargetSquare.Rank];
-            }
+            // }
 
-            if (moveValue == highestValueMove)
+            moveValue -= GetOpponentMoveValue(board, move);
+
+            if (moveValue == highestMoveValue)
             {
                 bestMove.Add(move);
             }
-            else if (moveValue > highestValueMove)
+            else if (moveValue > highestMoveValue)
             {
                 bestMove.Clear();
                 bestMove.Add(move);
-                highestValueMove = moveValue;
+                highestMoveValue = moveValue;
             }
         }
-        // int result = rng.Next(bestMove.Count);
-        // Console.WriteLine(highestValueMove);
-        // Console.WriteLine(bestMove.Count);
-        // Console.WriteLine(result);
+        
         return bestMove[rng.Next(bestMove.Count)];
+    }
+
+    int GetOpponentMoveValue(Board board, Move currentMove)
+    {
+        board.MakeMove(currentMove);
+        Move[] moves = board.GetLegalMoves();
+        int highestMoveValue = 0;
+
+        foreach(Move move in moves)
+        {
+            if (MoveIsCheckmate(board, move))
+            {
+                board.UndoMove(currentMove);
+                return 10000;
+            }
+
+            // Find highest value capture
+            Piece capturedPiece = board.GetPiece(move.TargetSquare);
+            int moveValue = pieceValues[(int)capturedPiece.PieceType];
+
+            if (moveValue > highestMoveValue)
+            {
+                highestMoveValue = moveValue;
+            }
+
+        }
+
+        board.UndoMove(currentMove);
+
+        return highestMoveValue;
     }
 
     // Test if this move gives checkmate
