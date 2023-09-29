@@ -29,6 +29,12 @@ public class MyBot : IChessBot
             Piece capturedPiece = board.GetPiece(move.TargetSquare);
             int moveValue = pieceValues[(int)capturedPiece.PieceType];
 
+            // Check if the move is check
+            if (MoveIsCheck(board, move))
+            {
+                moveValue += 10;
+            }
+
             // Check if a pawn is being promoted, but not to queen
             if (move.IsPromotion && Convert.ToInt16(move.PromotionPieceType) != 5)
             {
@@ -90,13 +96,22 @@ public class MyBot : IChessBot
         return highestMoveValue;
     }
 
-    // Test if this move gives checkmate
+    // Test if this move is checkmate
     bool MoveIsCheckmate(Board board, Move move)
     {
         board.MakeMove(move);
         bool isMate = board.IsInCheckmate();
         board.UndoMove(move);
         return isMate;
+    }
+
+    // Test if this move is check
+    bool MoveIsCheck(Board board, Move move)
+    {
+        board.MakeMove(move);
+        bool isCheck = board.IsInCheck();
+        board.UndoMove(move);
+        return isCheck;
     }
 
 }

@@ -11,38 +11,142 @@ namespace ChessChallenge.Example
     {
         // EXAMPLE BOT
         // Piece values: null, pawn, knight, bishop, rook, queen, king
-        int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
+        // int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
 
+        // public Move Think(Board board, Timer timer)
+        // {
+        //     Move[] allMoves = board.GetLegalMoves();
+
+        //     // Pick a random move to play if nothing better is found
+        //     Random rng = new();
+        //     Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
+        //     int highestValueCapture = 0;
+
+        //     foreach (Move move in allMoves)
+        //     {
+        //         // Always play checkmate in one
+        //         if (MoveIsCheckmate(board, move))
+        //         {
+        //             moveToPlay = move;
+        //             break;
+        //         }
+
+        //         // Find highest value capture
+        //         Piece capturedPiece = board.GetPiece(move.TargetSquare);
+        //         int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
+
+        //         if (capturedPieceValue > highestValueCapture)
+        //         {
+        //             moveToPlay = move;
+        //             highestValueCapture = capturedPieceValue;
+        //         }
+        //     }
+
+        //     return moveToPlay;
+        // }
+
+        // // Test if this move gives checkmate
+        // bool MoveIsCheckmate(Board board, Move move)
+        // {
+        //     board.MakeMove(move);
+        //     bool isMate = board.IsInCheckmate();
+        //     board.UndoMove(move);
+        //     return isMate;
+        // }
+
+        // EXAMPLE BOT END
+
+        // MY CURRENT BOT
+        // Piece values: null, pawn, knight, bishop, rook, queen, king
+        int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
+            
         public Move Think(Board board, Timer timer)
         {
-            Move[] allMoves = board.GetLegalMoves();
-
-            // Pick a random move to play if nothing better is found
+            Move[] moves = board.GetLegalMoves();
+            
+            // Order the moves by finding the value of a capture and subtracting the value of the opponents best possible capture after that move
+            // If multiple moves have the same value, one is chosen at random
             Random rng = new();
-            Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
-            int highestValueCapture = 0;
+            List<Move> bestMove = new List<Move>();
+            int highestMoveValue = -10050;
 
-            foreach (Move move in allMoves)
+            foreach (Move move in moves)
             {
                 // Always play checkmate in one
                 if (MoveIsCheckmate(board, move))
                 {
-                    moveToPlay = move;
-                    break;
+                    return move;
                 }
 
                 // Find highest value capture
                 Piece capturedPiece = board.GetPiece(move.TargetSquare);
-                int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
+                int moveValue = pieceValues[(int)capturedPiece.PieceType];
 
-                if (capturedPieceValue > highestValueCapture)
+                // // Check if the move is check
+                // if (MoveIsCheck(board, move))
+                // {
+                //     moveValue += 10;
+                // }
+
+                // // Check if a pawn is being promoted, but not to queen
+                // if (move.IsPromotion && Convert.ToInt16(move.PromotionPieceType) != 5)
+                // {
+                //     moveValue -= 7500;
+                // }
+
+                // // Check if move is a draw
+                // board.MakeMove(move);
+                // if (board.IsDraw())
+                // {
+                //     moveValue -= 8000;
+                // }
+                // board.UndoMove(move);
+
+                moveValue -= GetOpponentMoveValue(board, move);
+
+                if (moveValue == highestMoveValue)
                 {
-                    moveToPlay = move;
-                    highestValueCapture = capturedPieceValue;
+                    bestMove.Add(move);
+                }
+                else if (moveValue > highestMoveValue)
+                {
+                    bestMove.Clear();
+                    bestMove.Add(move);
+                    highestMoveValue = moveValue;
                 }
             }
+            
+            return bestMove[rng.Next(bestMove.Count)];
+        }
 
-            return moveToPlay;
+        int GetOpponentMoveValue(Board board, Move currentMove)
+        {
+            board.MakeMove(currentMove);
+            Move[] moves = board.GetLegalMoves();
+            int highestMoveValue = 0;
+
+            foreach(Move move in moves)
+            {
+                if (MoveIsCheckmate(board, move))
+                {
+                    board.UndoMove(currentMove);
+                    return 10000;
+                }
+
+                // Find highest value capture
+                Piece capturedPiece = board.GetPiece(move.TargetSquare);
+                int moveValue = pieceValues[(int)capturedPiece.PieceType];
+
+                if (moveValue > highestMoveValue)
+                {
+                    highestMoveValue = moveValue;
+                }
+
+            }
+
+            board.UndoMove(currentMove);
+
+            return highestMoveValue;
         }
 
         // Test if this move gives checkmate
@@ -54,91 +158,14 @@ namespace ChessChallenge.Example
             return isMate;
         }
 
-        // EXAMPLE BOT END
-
-        // MY CURRENT BOT
-        // Piece values: null, pawn, knight, bishop, rook, queen, king
-        // int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
-            
-        // public Move Think(Board board, Timer timer)
-        // {
-        //     Move[] moves = board.GetLegalMoves();
-            
-        //     // Order the moves by finding the value of a capture and subtracting the value of the opponents best possible capture after that move
-        //     // If multiple moves have the same value, one is chosen at random
-        //     Random rng = new();
-        //     List<Move> bestMove = new List<Move>();
-        //     int highestMoveValue = -10050;
-
-        //     foreach (Move move in moves)
-        //     {
-        //         // Always play checkmate in one
-        //         if (MoveIsCheckmate(board, move))
-        //         {
-        //             return move;
-        //         }
-
-        //         // Find highest value capture
-        //         Piece capturedPiece = board.GetPiece(move.TargetSquare);
-        //         int moveValue = pieceValues[(int)capturedPiece.PieceType];
-
-        //         // }
-
-        //         moveValue -= GetOpponentMoveValue(board, move);
-
-        //         if (moveValue == highestMoveValue)
-        //         {
-        //             bestMove.Add(move);
-        //         }
-        //         else if (moveValue > highestMoveValue)
-        //         {
-        //             bestMove.Clear();
-        //             bestMove.Add(move);
-        //             highestMoveValue = moveValue;
-        //         }
-        //     }
-            
-        //     return bestMove[rng.Next(bestMove.Count)];
-        // }
-
-        // int GetOpponentMoveValue(Board board, Move currentMove)
-        // {
-        //     board.MakeMove(currentMove);
-        //     Move[] moves = board.GetLegalMoves();
-        //     int highestMoveValue = 0;
-
-        //     foreach(Move move in moves)
-        //     {
-        //         if (MoveIsCheckmate(board, move))
-        //         {
-        //             board.UndoMove(currentMove);
-        //             return 10000;
-        //         }
-
-        //         // Find highest value capture
-        //         Piece capturedPiece = board.GetPiece(move.TargetSquare);
-        //         int moveValue = pieceValues[(int)capturedPiece.PieceType];
-
-        //         if (moveValue > highestMoveValue)
-        //         {
-        //             highestMoveValue = moveValue;
-        //         }
-
-        //     }
-
-        //     board.UndoMove(currentMove);
-
-        //     return highestMoveValue;
-        // }
-
-        // // Test if this move gives checkmate
-        // bool MoveIsCheckmate(Board board, Move move)
-        // {
-        //     board.MakeMove(move);
-        //     bool isMate = board.IsInCheckmate();
-        //     board.UndoMove(move);
-        //     return isMate;
-        // }
+        // Test if this move is check
+        bool MoveIsCheck(Board board, Move move)
+        {
+            board.MakeMove(move);
+            bool isCheck = board.IsInCheck();
+            board.UndoMove(move);
+            return isCheck;
+        }
 
         // MY BOT END
     }
