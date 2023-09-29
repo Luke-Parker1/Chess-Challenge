@@ -82,25 +82,7 @@ namespace ChessChallenge.Example
                 Piece capturedPiece = board.GetPiece(move.TargetSquare);
                 int moveValue = pieceValues[(int)capturedPiece.PieceType];
 
-                // // Check if the move is check
-                // if (MoveIsCheck(board, move))
-                // {
-                //     moveValue += 10;
                 // }
-
-                // // Check if a pawn is being promoted, but not to queen
-                // if (move.IsPromotion && Convert.ToInt16(move.PromotionPieceType) != 5)
-                // {
-                //     moveValue -= 7500;
-                // }
-
-                // // Check if move is a draw
-                // board.MakeMove(move);
-                // if (board.IsDraw())
-                // {
-                //     moveValue -= 8000;
-                // }
-                // board.UndoMove(move);
 
                 moveValue -= GetOpponentMoveValue(board, move);
 
@@ -156,15 +138,6 @@ namespace ChessChallenge.Example
             bool isMate = board.IsInCheckmate();
             board.UndoMove(move);
             return isMate;
-        }
-
-        // Test if this move is check
-        bool MoveIsCheck(Board board, Move move)
-        {
-            board.MakeMove(move);
-            bool isCheck = board.IsInCheck();
-            board.UndoMove(move);
-            return isCheck;
         }
 
         // MY BOT END

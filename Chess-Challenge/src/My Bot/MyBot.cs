@@ -15,7 +15,7 @@ public class MyBot : IChessBot
         // If multiple moves have the same value, one is chosen at random
         Random rng = new();
         List<Move> bestMove = new List<Move>();
-        int highestMoveValue = -23500;
+        int highestMoveValue =  Int32.MinValue;
 
         foreach (Move move in moves)
         {
@@ -25,20 +25,14 @@ public class MyBot : IChessBot
                 return move;
             }
 
-            // Find highest value capture
+            // Find highest value capture and add promotion
             Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int moveValue = pieceValues[(int)capturedPiece.PieceType];
+            int moveValue = pieceValues[(int)capturedPiece.PieceType] + pieceValues[(int)move.PromotionPieceType];
 
             // Check if the move is check
             if (MoveIsCheck(board, move))
             {
                 moveValue += 10;
-            }
-
-            // Check if a pawn is being promoted, but not to queen
-            if (move.IsPromotion && Convert.ToInt16(move.PromotionPieceType) != 5)
-            {
-                moveValue -= 7500;
             }
 
             // Check if move is a draw
@@ -82,7 +76,7 @@ public class MyBot : IChessBot
 
             // Find highest value capture
             Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int moveValue = pieceValues[(int)capturedPiece.PieceType];
+            int moveValue = pieceValues[(int)capturedPiece.PieceType] + pieceValues[(int)move.PromotionPieceType];
 
             if (moveValue > highestMoveValue)
             {
